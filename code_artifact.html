@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>משחק מיון חלקי דיבר - שם עצם, שם תואר, פועל</title>
+    <!-- Tailwind CSS for Modern & Premium UI -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts for Beautiful Hebrew Typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <!-- FontAwesome for Premium Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Canvas Confetti for Celebration -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <style>
+        body {
+            font-family: 'Rubik', sans-serif;
+            background: radial-gradient(circle at top, #f0f4f8 0%, #d9e2ec 100%);
+        }
+        .card-shake {
+            animation: shake 0.5s ease-in-out;
+        }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-10px); }
+            40%, 80% { transform: translateX(10px); }
+        }
+        .drop-zone-active {
+            transform: scale(1.03);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between overflow-x-hidden text-slate-800">
+
+    <!-- Header / Navbar -->
+    <header class="bg-white/80 backdrop-blur-md border-b border-slate-200/80 sticky top-0 z-50 px-6 py-4 shadow-sm">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+            <div class="flex items-center gap-3">
+                <div class="bg-indigo-600 text-white p-2.5 rounded-2xl shadow-md shadow-indigo-200">
+                    <i class="fa-solid fa-graduation-cap text-2xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-2xl font-black text-indigo-950 tracking-tight">משחק חלקי הדיבר</h1>
+                    <p class="text-xs text-slate-500 font-medium">מיון אינטראקטיבי על הלוח: שם עצם, שם תואר ופועל</p>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-3 flex-wrap">
+                <!-- Level Select -->
+                <div class="flex items-center bg-slate-100 rounded-xl p-1 border border-slate-200">
+                    <button onclick="changeDifficulty('easy')" id="btn-easy" class="px-4 py-1.5 rounded-lg text-sm font-bold transition-all bg-indigo-600 text-white shadow">קל</button>
+                    <button onclick="changeDifficulty('medium')" id="btn-medium" class="px-4 py-1.5 rounded-lg text-sm font-bold text-slate-600 transition-all hover:text-indigo-600">בינוני</button>
+                    <button onclick="changeDifficulty('hard')" id="btn-hard" class="px-4 py-1.5 rounded-lg text-sm font-bold text-slate-600 transition-all hover:text-indigo-600">מאתגר (שמות פעולה)</button>
+                </div>
+
+                <!-- Sound Control -->
+                <button onclick="toggleSound()" id="sound-btn" class="bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-600 p-2.5 rounded-xl transition-colors">
+                    <i id="sound-icon" class="fa-solid fa-volume-high text-lg"></i>
+                </button>
+
+                <!-- Instruction Button -->
+                <button onclick="openInstructions()" class="bg-indigo-50 hover:bg-indigo-100 border border-indigo-100 text-indigo-700 font-bold px-4 py-2 rounded-xl text-sm transition-colors flex items-center gap-2">
+                    <i class="fa-solid fa-circle-question"></i>
+                    <span>הוראות משחק</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Grid -->
+    <main class="max-w-7xl mx-auto px-4 md:px-6 py-6 flex-grow w-full flex flex-col gap-6">
+        
+        <!-- Score & Progress Panel -->
+        <div class="bg-white rounded-3xl p-6 shadow-sm border border-slate-200/60 flex flex-col md:flex-row items-center justify-between gap-6">
+            <div class="w-full md:w-1/3">
+                <div class="flex justify-between items-center mb-2">
+                    <span class="text-sm font-bold text-slate-500">התקדמות המיון</span>
+                    <span id="progress-text" class="text-sm font-bold text-indigo-700">0 מתוך 12 מילים</span>
+                </div>
+                <div class="w-full bg-slate-100 h-3 rounded-full overflow-hidden border border-slate-200">
+                    <div id="progress-bar" class="bg-indigo-600 h-full w-0 transition-all duration-300 rounded-full"></div>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-8 justify-around w-full md:w-auto">
+                <div class="text-center">
+                    <div class="text-xs font-bold text-slate-400 uppercase tracking-wider">ניקוד</div>
+                    <div id="score" class="text-3xl font-black text-slate-800">0</div>
+                </div>
+                <div class="h-10 w-px bg-slate-200"></div>
+                <div class="text-center">
+                    <div class="text-xs font-bold text-slate-400 uppercase tracking-wider">רצף הצלחות</div>
+                    <div id="streak" class="text-3xl font-black text-amber-500 flex items-center gap-1 justify-center">
+                        <span>0</span>
+                        <i class="fa-solid fa-fire text-xl animate-pulse"></i>
+                    </div>
+                </div>
+                <div class="h-10 w-px bg-slate-200"></div>
+                <div class="text-center">
+                    <div class="text-xs font-bold text-slate-400 uppercase tracking-wider">דיוק</div>
+                    <div id="accuracy" class="text-3xl font-black text-emerald-600">100%</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Interactive Board -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch flex-grow">
+            
+            <!-- Left Side: Word Deck & Controls (4 Columns) -->
+            <div class="lg:col-span-4 flex flex-col justify-center items-center bg-white/50 backdrop-blur-sm border border-slate-200/50 rounded-3xl p-6 shadow-sm min-h-[350px]">
+                <div class="text-center mb-4">
+                    <span class="bg-indigo-100 text-indigo-800 text-xs font-bold px-3 py-1 rounded-full">גררו לתיבה או לחצו על כפתורי המיון</span>
+                </div>
+
+                <!-- Word Card Container -->
+                <div id="card-container" class="relative w-full max-w-[280px] h-[180px] flex items-center justify-center">
+                    <!-- The Active Word Card -->
+                    <div id="word-card" draggable="true" ondragstart="drag(event)" class="absolute w-full h-full bg-gradient-to-br from-indigo-600 to-indigo-800 text-white rounded-2xl shadow-xl hover:shadow-2xl flex flex-col items-center justify-center cursor-grab active:cursor-grabbing transition-all duration-200 transform border-4 border-white/20 select-none">
+                        <span id="word-text" class="text-3xl md:text-4xl font-extrabold tracking-wide drop-shadow-md">טוען...</span>
+                        <div class="absolute bottom-3 text-[10px] text-white/60 font-medium flex items-center gap-1">
+                            <i class="fa-solid fa-arrows-up-down-left-right"></i>
+                            <span>גררו אותי לתיבה המתאימה</span>
+                        </div>
+                    </div>
+
+                    <!-- Completed State Message -->
+                    <div id="finished-card" class="hidden text-center p-6 flex flex-col items-center justify-center gap-3">
+                        <div class="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center text-3xl shadow-inner animate-bounce">
+                            <i class="fa-solid fa-check"></i>
+                        </div>
+                        <h3 class="text-xl font-bold text-slate-800">כל הכבוד!</h3>
+                        <p class="text-sm text-slate-500">מיינתם את כל המילים בהצלחה רבה.</p>
+                        <button onclick="resetGame()" class="mt-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-5 rounded-xl text-sm shadow-md shadow-indigo-100 transition-all">
+                            שחקו שוב <i class="fa-solid fa-rotate-right mr-1"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Quick Click Buttons (For Smart Boards & Touch Screens) -->
+                <div id="quick-buttons" class="w-full max-w-[280px] mt-6 flex flex-col gap-2">
+                    <div class="text-center text-xs font-bold text-slate-400 mb-1">לחיצה מהירה למסכי מגע:</div>
+                    <button onclick="quickSort('noun')" class="w-full bg-blue-50 hover:bg-blue-100 border-2 border-blue-200 hover:border-blue-300 text-blue-700 font-bold py-2.5 px-4 rounded-xl transition-all flex items-center justify-between text-sm">
+                        <span><i class="fa-solid fa-box mr-1"></i> שם עצם</span>
+                        <i class="fa-solid fa-arrow-left text-xs opacity-50"></i>
+                    </button>
+                    <button onclick="quickSort('adjective')" class="w-full bg-violet-50 hover:bg-violet-100 border-2 border-violet-200 hover:border-violet-300 text-violet-700 font-bold py-2.5 px-4 rounded-xl transition-all flex items-center justify-between text-sm">
+                        <span><i class="fa-solid fa-palette mr-1"></i> שם תואר</span>
+                        <i class="fa-solid fa-arrow-left text-xs opacity-50"></i>
+                    </button>
+                    <button onclick="quickSort('verb')" class="w-full bg-emerald-50 hover:bg-emerald-100 border-2 border-emerald-200 hover:border-emerald-300 text-emerald-700 font-bold py-2.5 px-4 rounded-xl transition-all flex items-center justify-between text-sm">
+                        <span><i class="fa-solid fa-running mr-1"></i> פועל</span>
+                        <i class="fa-solid fa-arrow-left text-xs opacity-50"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Right Side: The Three Drop Zones (8 Columns) -->
+            <div class="lg:col-span-8 grid grid-cols-1 md:grid-cols-3 gap-6">
+                
+                <!-- Zone 1: Noun (שם עצם) -->
+                <div id="zone-noun" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 'noun')" class="bg-white rounded-3xl border-3 border-dashed border-blue-200 p-5 flex flex-col justify-between transition-all duration-200 min-h-[350px] relative overflow-hidden shadow-sm">
+                    <div class="absolute top-0 right-0 w-32 h-32 bg-blue-50 rounded-bl-[100px] -z-10 transition-all"></div>
+                    <div>
+                        <!-- Header Box -->
+                        <div class="flex items-center gap-3 border-b border-blue-100 pb-3 mb-4">
+                            <div class="bg-blue-100 text-blue-700 p-2.5 rounded-2xl">
+                                <i class="fa-solid fa-box text-xl"></i>
+                            </div>
+                            <div>
+                                <h2 class="font-extrabold text-blue-900 text-lg">שם עצם</h2>
+                                <p class="text-[10px] text-blue-600 font-medium">אנשים, חפצים, מקומות או רעיונות</p>
+                            </div>
+                        </div>
+                        <!-- Sorted Words List -->
+                        <div id="list-noun" class="flex flex-wrap gap-2 content-start">
+                            <!-- Words will appear here -->
+                        </div>
+                    </div>
+                    <div class="text-center text-xs text-blue-400 font-medium border-t border-blue-50 pt-3 mt-4">
+                        השליכו לכאן שמות עצם
+                    </div>
+                </div>
+
+                <!-- Zone 2: Adjective (שם תואר) -->
+                <div id="zone-adjective" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 'adjective')" class="bg-white rounded-3xl border-3 border-dashed border-violet-200 p-5 flex flex-col justify-between transition-all duration-200 min-h-[350px] relative overflow-hidden shadow-sm">
+                    <div class="absolute top-0 right-0 w-32 h-32 bg-violet-50 rounded-bl-[100px] -z-10 transition-all"></div>
+                    <div>
+                        <!-- Header Box -->
+                        <div class="flex items-center gap-3 border-b border-violet-100 pb-3 mb-4">
+                            <div class="bg-violet-100 text-violet-700 p-2.5 rounded-2xl">
+                                <i class="fa-solid fa-palette text-xl"></i>
+                            </div>
+                            <div>
+                                <h2 class="font-extrabold text-violet-900 text-lg">שם תואר</h2>
+                                <p class="text-[10px] text-violet-600 font-medium">מילים המתארות ומאפיינות שמות עצם</p>
+                            </div>
+                        </div>
+                        <!-- Sorted Words List -->
+                        <div id="list-adjective" class="flex flex-wrap gap-2 content-start">
+                            <!-- Words will appear here -->
+                        </div>
+                    </div>
+                    <div class="text-center text-xs text-violet-400 font-medium border-t border-violet-50 pt-3 mt-4">
+                        השליכו לכאן שמות תואר
+                    </div>
+                </div>
+
+                <!-- Zone 3: Verb (פועל) -->
+                <div id="zone-verb" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 'verb')" class="bg-white rounded-3xl border-3 border-dashed border-emerald-200 p-5 flex flex-col justify-between transition-all duration-200 min-h-[350px] relative overflow-hidden shadow-sm">
+                    <div class="absolute top-0 right-0 w-32 h-32 bg-emerald-50 rounded-bl-[100px] -z-10 transition-all"></div>
+                    <div>
+                        <!-- Header Box -->
+                        <div class="flex items-center gap-3 border-b border-emerald-100 pb-3 mb-4">
+                            <div class="bg-emerald-100 text-emerald-700 p-2.5 rounded-2xl">
+                                <i class="fa-solid fa-running text-xl"></i>
+                            </div>
+                            <div>
+                                <h2 class="font-extrabold text-emerald-900 text-lg">פועל</h2>
+                                <p class="text-[10px] text-emerald-600 font-medium">מילים המציינות פעולה בזמן מסוים</p>
+                            </div>
+                        </div>
+                        <!-- Sorted Words List -->
+                        <div id="list-verb" class="flex flex-wrap gap-2 content-start">
+                            <!-- Words will appear here -->
+                        </div>
+                    </div>
+                    <div class="text-center text-xs text-emerald-400 font-medium border-t border-emerald-50 pt-3 mt-4">
+                        השליכו לכאן פעלים
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer with Classroom Stats / Controls -->
+    <footer class="bg-white border-t border-slate-200 py-4 px-6 text-center text-slate-500 text-xs font-semibold">
+        <div class="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-2">
+            <div>
+                <span>פותח בהתאמה לתוכנית הלימודים בלשון עברית</span>
+                <span class="mx-2">•</span>
+                <button onclick="resetGame()" class="text-indigo-600 hover:text-indigo-800 transition-colors">
+                    <i class="fa-solid fa-arrows-rotate"></i> איפוס משחק והתחלה מחדש
+                </button>
+            </div>
+            <div>
+                <span>שימו לב: המשחק תומך בגרירה או בלחיצות מהירות לשיפור החוויה על לוחות חכמים.</span>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Instructions Modal -->
+    <div id="instructions-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl relative border border-slate-100">
+            <button onclick="closeInstructions()" class="absolute top-4 left-4 text-slate-400 hover:text-slate-600 transition-colors">
+                <i class="fa-solid fa-circle-xmark text-2xl"></i>
+            </button>
+            <div class="text-center mb-6">
+                <div class="w-14 h-14 bg-indigo-100 text-indigo-700 rounded-full flex items-center justify-center text-2xl mx-auto mb-3">
+                    <i class="fa-solid fa-gamepad"></i>
+                </div>
+                <h2 class="text-2xl font-black text-indigo-950">הוראות המשחק לכיתה</h2>
+            </div>
+            <div class="space-y-4 text-slate-700 text-sm leading-relaxed text-right">
+                <div class="flex gap-3">
+                    <span class="bg-indigo-100 text-indigo-800 font-black rounded-full w-6 h-6 flex items-center justify-center shrink-0">1</span>
+                    <p>בכל שלב תופיע מילה אחת במרכז הלוח (בכרטיסייה הסגולה).</p>
+                </div>
+                <div class="flex gap-3">
+                    <span class="bg-indigo-100 text-indigo-800 font-black rounded-full w-6 h-6 flex items-center justify-center shrink-0">2</span>
+                    <p>התלמיד המוזמן אל הלוח צריך לגרור את הכרטיסייה אל התיבה הנכונה, או להשתמש בכפתורי הלחיצה המהירה שתחתיה.</p>
+                </div>
+                <div class="flex gap-3">
+                    <span class="bg-indigo-100 text-indigo-800 font-black rounded-full w-6 h-6 flex items-center justify-center shrink-0">3</span>
+                    <p>מליאת הכיתה עוקבת ומאשרת את התשובה ביחד. מילה שממוינת נכון תישמר בתוך התיבה שלה כחלק מסיכום הלוח.</p>
+                </div>
+                <div class="flex gap-3">
+                    <span class="bg-indigo-100 text-indigo-800 font-black rounded-full w-6 h-6 flex items-center justify-center shrink-0">4</span>
+                    <p>אם המיון שגוי, הכרטיסייה תרטוט ותישאר במקומה לניסיון נוסף תוך קבלת רמז פדגוגי מהמורה.</p>
+                </div>
+            </div>
+            <button onclick="closeInstructions()" class="w-full mt-6 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-xl transition-colors shadow-md shadow-indigo-100">
+                הבנתי, בואו נתחיל!
+            </button>
+        </div>
+    </div>
+
+    <!-- Error/Hint Notification Toast -->
+    <div id="toast-hint" class="fixed bottom-6 left-1/2 transform -translate-x-1/2 bg-rose-600 text-white font-bold px-6 py-3.5 rounded-2xl shadow-xl z-50 flex items-center gap-3 opacity-0 transition-all duration-300 pointer-events-none text-sm">
+        <i class="fa-solid fa-circle-exclamation text-lg"></i>
+        <span id="toast-text">אופס! נסו שוב.</span>
+    </div>
+
+    <!-- Game Logic Scripts -->
+    <script>
+        // Game Datasets by Difficulty
+        const wordPools = {
+            easy: [
+                { word: 'ילד', type: 'noun', hint: 'שם עצם - מדובר באדם, ניתן להוסיף ה\' הידיעה: הילד' },
+                { word: 'בית', type: 'noun', hint: 'שם עצם - מדובר במקום פיזי, ניתן לומר: הבית שלי' },
+                { word: 'כלב', type: 'noun', hint: 'שם עצם - בעל חיים, ניתן לומר: הכלב החמוד' },
+                { word: 'ספר', type: 'noun', hint: 'שם עצם - חפץ דומם, ניתן ליידע אותו: הספר' },
+                { word: 'שולחן', type: 'noun', hint: 'שם עצם - רהיט/חפץ מוחשי' },
+                { word: 'שמיים', type: 'noun', hint: 'שם עצם - גרם שמיים, ניתן להוסיף ה\' הידיעה: השמיים' },
+                
+                { word: 'יפה', type: 'adjective', hint: 'שם תואר - מתאר מראה של שם עצם (ילד יפה)' },
+                { word: 'גדול', type: 'adjective', hint: 'שם תואר - מתאר גודל של שם עצם (בית גדול)' },
+                { word: 'מהיר', type: 'adjective', hint: 'שם תואר - מתאר תכונה או קצב (רץ מהיר)' },
+                { word: 'אדום', type: 'adjective', hint: 'שם תואר - צבעים הם תיאורים של שמות עצם (תפוח אדום)' },
+                { word: 'חכם', type: 'adjective', hint: 'שם תואר - תכונה של מישהו (תלמיד חכם)' },
+                { word: 'קטן', type: 'adjective', hint: 'שם תואר - מציין גודל יחסי של עצם' },
+                
+                { word: 'רץ', type: 'verb', hint: 'פועל - פעולה שמישהו עושה ברגע זה (הוא רץ)' },
+                { word: 'אכל', type: 'verb', hint: 'פועל - פעולה שבוצעה בזמן עבר (הוא אכל אתמול)' },
+                { word: 'כותב', type: 'verb', hint: 'פועל - פעולה המתרחשת בזמן הווה' },
+                { word: 'ישנה', type: 'verb', hint: 'פועל - היא ישנה (זמן עבר/הווה)' },
+                { word: 'שרנו', type: 'verb', hint: 'פועל - אנחנו שרנו (פועל בגוף מדברים בזמן עבר)' },
+                { word: 'תלמדו', type: 'verb', hint: 'פועל - אתם תלמדו בעתיד (רכיב זמן וגוף)' }
+            ],
+            medium: [
+                { word: 'מחשבה', type: 'noun', hint: 'שם עצם מופשט - רעיון/דבר לא מוחשי, אך עדיין שם עצם (המחשבה שלי)' },
+                { word: 'חברות', type: 'noun', hint: 'שם עצם מופשט - מושג או קשר בין אנשים, ניתן ליידע: החברות הזו' },
+                { word: 'נסיעה', type: 'noun', hint: 'שם עצם - שם של אירוע/פעולה (הנסיעה הייתה ארוכה)' },
+                { word: 'עיפרון', type: 'noun', hint: 'שם עצם - כלי כתיבה מוחשי' },
+                { word: 'חג', type: 'noun', hint: 'שם עצם - מועד מיוחד, ניתן לומר: החג מתקרב' },
+                
+                { word: 'מעניין', type: 'adjective', hint: 'שם תואר - מתאר חוויה או דבר מה (ספר מעניין)' },
+                { word: 'חשוך', type: 'adjective', hint: 'שם תואר - מתאר מצב של מקום (חדר חשוך)' },
+                { word: 'מנומס', type: 'adjective', hint: 'שם תואר - תכונת אופי של אדם (ילד מנומס)' },
+                { word: 'חגיגי', type: 'adjective', hint: 'שם תואר - מתאר אופן או מראה מיוחד (בגד חגיגי)' },
+                { word: 'סקרן', type: 'adjective', hint: 'שם תואר - תיאור תכונה של אדם או חיה' },
+                
+                { word: 'הלכנו', type: 'verb', hint: 'פועל - אנחנו ביצענו את פעולת ההליכה בעבר' },
+                { word: 'יציירו', type: 'verb', hint: 'פועל - הם יבצעו פעולת ציור בעתיד' },
+                { word: 'תספר', type: 'verb', hint: 'פועל - את תספרי בעתיד או הוא יספר בעבר' },
+                { word: 'הסבירה', type: 'verb', hint: 'פועל - היא ביצעה פעולת הסבר בעבר' },
+                { word: 'משחקים', type: 'verb', hint: 'פועל - אנחנו/הם משחקים כעת בהווה' }
+            ],
+            hard: [
+                { word: 'כתיבה', type: 'noun', hint: 'שם עצם (שם פעולה) - שימו לב! זהו שם של פעולה, לא פועל משובץ זמן. ניתן לומר: הכתיבה יפה' },
+                { word: 'ריצה', type: 'noun', hint: 'שם עצם (שם פעולה) - השם של פעולת הריצה. ללא זמן וגוף (הריצה מעייפת)' },
+                { word: 'ציור', type: 'noun', hint: 'שם עצם (שם פעולה) - יצירה או השם של המלאכה (הציור תלוי על הקיר)' },
+                { word: 'למידה', type: 'noun', hint: 'שם עצם (שם פעולה) - תהליך הלמידה (הלמידה פותחת אופקים)' },
+                { word: 'משחק', type: 'noun', hint: 'שם עצם - השם של הפעילות, או חפץ פיזי (המשחק התחיל)' },
+                
+                { word: 'מפתיע', type: 'adjective', hint: 'שם תואר (בינוני פועל המשמש כתואר) - מתאר אירוע או מצב (משהו מפתיע)' },
+                { word: 'מרתק', type: 'adjective', hint: 'שם תואר - תיאור השפעה של דבר מה על הצופה (שיעור מרתק)' },
+                { word: 'צבעוני', type: 'adjective', hint: 'שם תואר - מתאר מראה של דבר מה מרובה גוונים' },
+                { word: 'שבור', type: 'adjective', hint: 'שם תואר (צורת פעול) - מתאר מצב של כלי או עצם (חלון שבור)' },
+                { word: 'מפותל', type: 'adjective', hint: 'שם תואר - מתאר צורה גיאומטרית או תוואי של דרך' },
+                
+                { word: 'לכתוב', type: 'verb', hint: 'פועל (שם פועל) - נטיית פועל בצורת המקור ללא זמן וגוף, אך מביעה את מהות עשיית הפעולה' },
+                { word: 'לרוץ', type: 'verb', hint: 'פועל (שם פועל) - צורת המקור המביעה תנועה אקטיבית' },
+                { word: 'לצייר', type: 'verb', hint: 'פועל (שם פועל) - נטיית המקור השייכת לעולם הפעלים' },
+                { word: 'שמרתם', type: 'verb', hint: 'פועל - אתם שמרתם בעבר (יש זמן, גוף ושורש)' },
+                { word: 'התלבשנו', type: 'verb', hint: 'פועל - אנחנו ביצענו פעולת התלבשות בעבר בבניין התפעל' }
+            ]
+        };
+
+        // State variables
+        let currentDifficulty = 'easy';
+        let currentWordList = [];
+        let currentWordIndex = 0;
+        let activeWord = null;
+        let score = 0;
+        let streak = 0;
+        let totalAttempts = 0;
+        let correctAttempts = 0;
+        let soundEnabled = true;
+
+        // Sound Engine (Web Audio API - No external assets needed!)
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        function playSound(type) {
+            if (!soundEnabled) return;
+            
+            // Resume context if suspended (browser security autoplays)
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            if (type === 'success') {
+                // Happy double beep
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(523.25, audioCtx.currentTime); // C5
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                osc.start();
+                
+                osc.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.1); // E5
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime + 0.1);
+                
+                osc.stop(audioCtx.currentTime + 0.25);
+            } else if (type === 'error') {
+                // Low buzz beep
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(150, audioCtx.currentTime); 
+                gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+                osc.start();
+                
+                osc.frequency.setValueAtTime(110, audioCtx.currentTime + 0.15); 
+                
+                osc.stop(audioCtx.currentTime + 0.35);
+            } else if (type === 'finish') {
+                // Arpeggio of victory
+                const freqs = [261.63, 329.63, 392.00, 523.25, 659.25, 1046.50];
+                freqs.forEach((f, i) => {
+                    const singleOsc = audioCtx.createOscillator();
+                    const singleGain = audioCtx.createGain();
+                    singleOsc.connect(singleGain);
+                    singleGain.connect(audioCtx.destination);
+                    
+                    singleOsc.type = 'triangle';
+                    singleOsc.frequency.setValueAtTime(f, audioCtx.currentTime + i * 0.08);
+                    singleGain.gain.setValueAtTime(0.1, audioCtx.currentTime + i * 0.08);
+                    
+                    singleOsc.start(audioCtx.currentTime + i * 0.08);
+                    singleOsc.stop(audioCtx.currentTime + i * 0.08 + 0.2);
+                });
+            }
+        }
+
+        // Initialize Game
+        window.onload = function() {
+            resetGame();
+        };
+
+        // Shuffle helper
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        // Reset & Start
+        function resetGame() {
+            // Get selected difficulty
+            currentWordList = shuffleArray([...wordPools[currentDifficulty]]);
+            currentWordIndex = 0;
+            score = 0;
+            streak = 0;
+            totalAttempts = 0;
+            correctAttempts = 0;
+            
+            // Clear Sorted Lists UI
+            document.getElementById('list-noun').innerHTML = '';
+            document.getElementById('list-adjective').innerHTML = '';
+            document.getElementById('list-verb').innerHTML = '';
+            
+            // Reset Progress bar and UI
+            updateProgress();
+            updateStats();
+            
+            // Reveal Deck Card & Hide Finished Screen
+            document.getElementById('word-card').style.display = 'flex';
+            document.getElementById('word-card').classList.remove('scale-0');
+            document.getElementById('finished-card').classList.add('hidden');
+            document.getElementById('quick-buttons').classList.remove('opacity-40', 'pointer-events-none');
+
+            // Load First Word
+            loadNextWord();
+        }
+
+        // Load Active Word
+        function loadNextWord() {
+            if (currentWordIndex < currentWordList.length) {
+                activeWord = currentWordList[currentWordIndex];
+                const card = document.getElementById('word-card');
+                const text = document.getElementById('word-text');
+                
+                // Set text
+                text.textContent = activeWord.word;
+                
+                // Add soft transition in
+                card.classList.add('scale-95', 'opacity-0');
+                setTimeout(() => {
+                    card.classList.remove('scale-95', 'opacity-0');
+                }, 50);
+            } else {
+                // Game Completed Successfully
+                activeWord = null;
+                endGame();
+            }
+        }
+
+        // End Game State
+        function endGame() {
+            playSound('finish');
+            
+            // Confetti Blast!
+            confetti({
+                particleCount: 150,
+                spread: 80,
+                origin: { y: 0.6 }
+            });
+
+            // Keep firing some confetti for 3 seconds
+            const duration = 2.5 * 1000;
+            const end = Date.now() + duration;
+
+            (function frame() {
+                confetti({
+                    particleCount: 3,
+                    angle: 60,
+                    spread: 55,
+                    origin: { x: 0 }
+                });
+                confetti({
+                    particleCount: 3,
+                    angle: 120,
+                    spread: 55,
+                    origin: { x: 1 }
+                });
+
+                if (Date.now() < end) {
+                    requestAnimationFrame(frame);
+                }
+            }());
+
+            // Hide Active word and show finished container
+            document.getElementById('word-card').style.display = 'none';
+            document.getElementById('finished-card').classList.remove('hidden');
+            document.getElementById('quick-buttons').classList.add('opacity-40', 'pointer-events-none');
+        }
+
+        // Action: Validate the Sorting Choice
+        function handleWordSorting(chosenType) {
+            if (!activeWord) return;
+
+            totalAttempts++;
+
+            if (chosenType === activeWord.type) {
+                // Correct Choice
+                correctAttempts++;
+                score += 10 + (streak * 2); // Streak bonus
+                streak++;
+                
+                playSound('success');
+                addWordToTargetList(activeWord.word, activeWord.type);
+                
+                // Animate drop success visually
+                animateCardDropSuccess(chosenType);
+
+                // Advance
+                currentWordIndex++;
+                updateProgress();
+                updateStats();
+                
+                setTimeout(() => {
+                    loadNextWord();
+                }, 300);
+
+            } else {
+                // Incorrect Choice
+                streak = 0;
+                playSound('error');
+                
+                // Shake active card
+                const card = document.getElementById('word-card');
+                card.classList.add('card-shake');
+                setTimeout(() => {
+                    card.classList.remove('card-shake');
+                }, 500);
+
+                // Show toast with pedagogic hint from database
+                showToast(activeWord.hint);
+                updateStats();
+            }
+        }
+
+        // UI Animation for correctly sorted word
+        function animateCardDropSuccess(type) {
+            const card = document.getElementById('word-card');
+            card.classList.add('scale-0', 'opacity-0');
+            setTimeout(() => {
+                card.classList.remove('scale-0', 'opacity-0');
+            }, 300);
+        }
+
+        // Add correct word visually to its respective box
+        function addWordToTargetList(word, type) {
+            const list = document.getElementById(`list-${type}`);
+            
+            // Design a beautiful badge for sorted words
+            const badge = document.createElement('div');
+            badge.className = "bg-slate-100 hover:bg-slate-200 border border-slate-200 px-3 py-1.5 rounded-xl text-sm font-bold text-slate-700 shadow-sm flex items-center gap-1.5 animate-bounce";
+            
+            let iconClass = "fa-box text-blue-500";
+            if (type === 'adjective') iconClass = "fa-palette text-violet-500";
+            if (type === 'verb') iconClass = "fa-running text-emerald-500";
+
+            badge.innerHTML = `<i class="fa-solid ${iconClass} text-xs"></i> <span>${word}</span>`;
+            
+            list.appendChild(badge);
+            
+            // Remove bounce class after animation completes
+            setTimeout(() => {
+                badge.classList.remove('animate-bounce');
+            }, 1000);
+        }
+
+        // UI Updates
+        function updateProgress() {
+            const total = currentWordList.length;
+            const current = currentWordIndex;
+            const percentage = total > 0 ? (current / total) * 100 : 0;
+            
+            document.getElementById('progress-text').textContent = `${current} מתוך ${total} מילים`;
+            document.getElementById('progress-bar').style.width = `${percentage}%`;
+        }
+
+        function updateStats() {
+            document.getElementById('score').textContent = score;
+            document.getElementById('streak').querySelector('span').textContent = streak;
+            
+            const accuracy = totalAttempts > 0 ? Math.round((correctAttempts / totalAttempts) * 100) : 100;
+            document.getElementById('accuracy').textContent = `${accuracy}%`;
+        }
+
+        // Change Difficulty
+        function changeDifficulty(diff) {
+            currentDifficulty = diff;
+            
+            // Update active buttons styling
+            const buttons = ['easy', 'medium', 'hard'];
+            buttons.forEach(b => {
+                const btn = document.getElementById(`btn-${b}`);
+                if (b === diff) {
+                    btn.className = "px-4 py-1.5 rounded-lg text-sm font-bold transition-all bg-indigo-600 text-white shadow";
+                } else {
+                    btn.className = "px-4 py-1.5 rounded-lg text-sm font-bold text-slate-600 transition-all hover:text-indigo-600";
+                }
+            });
+
+            resetGame();
+        }
+
+        // Sound Toggle
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            const icon = document.getElementById('sound-icon');
+            const btn = document.getElementById('sound-btn');
+            
+            if (soundEnabled) {
+                icon.className = "fa-solid fa-volume-high text-lg";
+                btn.className = "bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-600 p-2.5 rounded-xl transition-colors";
+            } else {
+                icon.className = "fa-solid fa-volume-xmark text-lg text-rose-500";
+                btn.className = "bg-rose-50 hover:bg-rose-100 border border-rose-100 text-rose-600 p-2.5 rounded-xl transition-colors";
+            }
+        }
+
+        // Modals & Notifications
+        function openInstructions() {
+            document.getElementById('instructions-modal').classList.remove('hidden');
+        }
+
+        function closeInstructions() {
+            document.getElementById('instructions-modal').classList.add('hidden');
+        }
+
+        function showToast(text) {
+            const toast = document.getElementById('toast-hint');
+            const toastText = document.getElementById('toast-text');
+            
+            toastText.textContent = text;
+            toast.style.opacity = '1';
+            toast.style.transform = 'translate(-50%, -10px)';
+            
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translate(-50%, 0)';
+            }, 6000); // 6 seconds display for reading the grammar hint carefully
+        }
+
+        // Quick Sorting Buttons (Click / Touch fallback)
+        function quickSort(type) {
+            handleWordSorting(type);
+        }
+
+        // --- Drag and Drop API Functions ---
+        function allowDrop(ev) {
+            ev.preventDefault();
+        }
+
+        function drag(ev) {
+            if (!activeWord) return;
+            ev.dataTransfer.setData("text", activeWord.type);
+            // Visual feedback on drag start
+            document.getElementById('word-card').style.opacity = '0.5';
+        }
+
+        // Drag events for adding stylish highlights to target boxes
+        function dragEnter(ev) {
+            ev.preventDefault();
+            const targetZone = ev.currentTarget;
+            targetZone.classList.add('drop-zone-active');
+            
+            // Add custom color highlight borders on hover
+            if (targetZone.id === 'zone-noun') {
+                targetZone.classList.add('border-blue-500', 'bg-blue-50/50');
+            } else if (targetZone.id === 'zone-adjective') {
+                targetZone.classList.add('border-violet-500', 'bg-violet-50/50');
+            } else if (targetZone.id === 'zone-verb') {
+                targetZone.classList.add('border-emerald-500', 'bg-emerald-50/50');
+            }
+        }
+
+        function dragLeave(ev) {
+            const targetZone = ev.currentTarget;
+            targetZone.classList.remove('drop-zone-active', 'border-blue-500', 'border-violet-500', 'border-emerald-500', 'bg-blue-50/50', 'bg-violet-50/50', 'bg-emerald-50/50');
+        }
+
+        function drop(ev, type) {
+            ev.preventDefault();
+            // Reset opacity of card
+            document.getElementById('word-card').style.opacity = '1';
+            
+            const targetZone = ev.currentTarget;
+            targetZone.classList.remove('drop-zone-active', 'border-blue-500', 'border-violet-500', 'border-emerald-500', 'bg-blue-50/50', 'bg-violet-50/50', 'bg-emerald-50/50');
+            
+            handleWordSorting(type);
+        }
+    </script>
+</body>
+</html>
